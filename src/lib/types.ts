@@ -20,9 +20,11 @@ export type AdminScheduleData = ScheduleData & {
   shareToken: string;
 };
 
-export type RecentSchedule = {
+export type ScheduleSummary = {
+  id: string;
   title: string;
-  adminToken: string;
   shareToken: string;
   createdAt: string;
+  itemCount: number;
+  checkedCount: number;
 };

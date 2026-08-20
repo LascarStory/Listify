@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateAdminToken, generateShareToken } from "@/lib/tokens";
+import { requireAdminSession } from "@/lib/adminAuth";
+import { generateShareToken } from "@/lib/tokens";
 import { LIMITS, cleanText } from "@/lib/validation";
 
+export async function GET() {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const schedules = await prisma.schedule.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { items: { include: { checks: true } } },
+  });
+
+  return NextResponse.json(
+    schedules.map((schedule) => ({
+      id: schedule.id,
+      title: schedule.title,
+      shareToken: schedule.shareToken,
+      createdAt: schedule.createdAt.toISOString(),
+      itemCount: schedule.items.length,
+      checkedCount: schedule.items.filter((item) => item.checks.length > 0)
+        .length,
+    }))
+  );
+}
+
 export async function POST(req: NextRequest) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
@@ -33,7 +63,6 @@ export async function POST(req: NextRequest) {
       title,
       description,
       shareToken: generateShareToken(),
-      adminToken: generateAdminToken(),
       items: {
         create: items.map((text: string, order: number) => ({ text, order })),
       },
@@ -41,7 +70,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({
+    id: schedule.id,
     shareToken: schedule.shareToken,
-    adminToken: schedule.adminToken,
   });
 }

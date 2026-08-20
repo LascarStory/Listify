@@ -13,7 +13,6 @@ datasource db {
 model Schedule {
   id          String   @id @default(cuid())
   shareToken  String   @unique
-  adminToken  String   @unique
   title       String
   description String   @default("")
   createdAt   DateTime @default(now())

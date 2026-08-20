@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/adminAuth";
 import { LIMITS, cleanText } from "@/lib/validation";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string; itemId: string }> }
+  { params }: { params: Promise<{ scheduleId: string; itemId: string }> }
 ) {
-  const { adminToken, itemId } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId, itemId } = await params;
   const body = await req.json().catch(() => null);
 
   const text = cleanText(body?.text, LIMITS.itemText);
@@ -18,7 +24,7 @@ export async function PATCH(
   }
 
   const result = await prisma.checklistItem.updateMany({
-    where: { id: itemId, schedule: { adminToken } },
+    where: { id: itemId, scheduleId },
     data: { text },
   });
 
@@ -34,12 +40,17 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string; itemId: string }> }
+  { params }: { params: Promise<{ scheduleId: string; itemId: string }> }
 ) {
-  const { adminToken, itemId } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId, itemId } = await params;
 
   const result = await prisma.checklistItem.deleteMany({
-    where: { id: itemId, schedule: { adminToken } },
+    where: { id: itemId, scheduleId },
   });
 
   if (result.count === 0) {

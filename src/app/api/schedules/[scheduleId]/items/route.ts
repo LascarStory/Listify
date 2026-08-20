@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/adminAuth";
 import { LIMITS, cleanText } from "@/lib/validation";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string }> }
+  { params }: { params: Promise<{ scheduleId: string }> }
 ) {
-  const { adminToken } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId } = await params;
   const body = await req.json().catch(() => null);
 
   const text = cleanText(body?.text, LIMITS.itemText);
@@ -18,7 +24,7 @@ export async function POST(
   }
 
   const schedule = await prisma.schedule.findUnique({
-    where: { adminToken },
+    where: { id: scheduleId },
     include: { items: true },
   });
   if (!schedule) {
@@ -49,9 +55,14 @@ export async function POST(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string }> }
+  { params }: { params: Promise<{ scheduleId: string }> }
 ) {
-  const { adminToken } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId } = await params;
   const body = await req.json().catch(() => null);
 
   if (!Array.isArray(body?.order) || !body.order.every((id: unknown) => typeof id === "string")) {
@@ -63,7 +74,7 @@ export async function PATCH(
   const orderedIds: string[] = body.order;
 
   const schedule = await prisma.schedule.findUnique({
-    where: { adminToken },
+    where: { id: scheduleId },
     include: { items: true },
   });
   if (!schedule) {

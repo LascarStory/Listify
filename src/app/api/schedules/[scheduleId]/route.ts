@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/adminAuth";
 import { serializeSchedule } from "@/lib/serialize";
 import { LIMITS, cleanText } from "@/lib/validation";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string }> }
+  { params }: { params: Promise<{ scheduleId: string }> }
 ) {
-  const { adminToken } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId } = await params;
 
   const schedule = await prisma.schedule.findUnique({
-    where: { adminToken },
+    where: { id: scheduleId },
     include: { items: { include: { checks: true } } },
   });
 
@@ -29,9 +35,14 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ adminToken: string }> }
+  { params }: { params: Promise<{ scheduleId: string }> }
 ) {
-  const { adminToken } = await params;
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId } = await params;
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
@@ -61,8 +72,33 @@ export async function PATCH(
   }
 
   const result = await prisma.schedule.updateMany({
-    where: { adminToken },
+    where: { id: scheduleId },
     data,
+  });
+
+  if (result.count === 0) {
+    return NextResponse.json(
+      { error: "일정을 찾을 수 없습니다." },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ scheduleId: string }> }
+) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const { scheduleId } = await params;
+
+  const result = await prisma.schedule.deleteMany({
+    where: { id: scheduleId },
   });
 
   if (result.count === 0) {

@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { LIMITS } from "@/lib/validation";
 import type { AdminScheduleData } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 5000;
 
-export default function AdminView({ adminToken }: { adminToken: string }) {
+export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [data, setData] = useState<AdminScheduleData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [title, setTitle] = useState("");
@@ -19,8 +20,10 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/${adminToken}`, { cache: "no-store" });
-    if (res.status === 404) {
+    const res = await fetch(`/api/schedules/${scheduleId}`, {
+      cache: "no-store",
+    });
+    if (res.status === 404 || res.status === 403) {
       setNotFound(true);
       return;
     }
@@ -31,7 +34,7 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
     setDescription((prev) =>
       document.activeElement?.id === "description" ? prev : json.description
     );
-  }, [adminToken]);
+  }, [scheduleId]);
 
   useEffect(() => {
     // Initial fetch + polling to sync with server-side check state.
@@ -44,7 +47,7 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
   async function saveMeta() {
     setSavingMeta(true);
     try {
-      await fetch(`/api/admin/${adminToken}`, {
+      await fetch(`/api/schedules/${scheduleId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description }),
@@ -60,7 +63,7 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
     if (!newItemText.trim()) return;
     setAddingItem(true);
     try {
-      await fetch(`/api/admin/${adminToken}/items`, {
+      await fetch(`/api/schedules/${scheduleId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: newItemText }),
@@ -82,7 +85,7 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
       setEditingId(null);
       return;
     }
-    await fetch(`/api/admin/${adminToken}/items/${editingId}`, {
+    await fetch(`/api/schedules/${scheduleId}/items/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: editingText }),
@@ -93,7 +96,9 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
 
   async function deleteItem(id: string) {
     if (!confirm("이 항목을 삭제할까요?")) return;
-    await fetch(`/api/admin/${adminToken}/items/${id}`, { method: "DELETE" });
+    await fetch(`/api/schedules/${scheduleId}/items/${id}`, {
+      method: "DELETE",
+    });
     await load();
   }
 
@@ -104,7 +109,7 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
     if (target < 0 || target >= items.length) return;
     [items[index], items[target]] = [items[target], items[index]];
     setData({ ...data, items });
-    await fetch(`/api/admin/${adminToken}/items`, {
+    await fetch(`/api/schedules/${scheduleId}/items`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: items.map((item) => item.id) }),
@@ -143,16 +148,12 @@ export default function AdminView({ adminToken }: { adminToken: string }) {
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-xl">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            관리자 페이지
-          </span>
-        </div>
-
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 mb-6">
-          이 페이지 주소는 나만 알고 있어야 합니다. 참여자에게는 아래 공유
-          링크만 전달하세요.
-        </div>
+        <Link
+          href="/"
+          className="text-sm text-slate-400 hover:text-slate-900 mb-4 inline-block"
+        >
+          ← 내 일정 목록
+        </Link>
 
         <div className="rounded-md border border-slate-200 bg-white p-4 mb-6">
           <label className="block text-xs text-slate-500 mb-1">공유 링크</label>
