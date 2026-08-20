@@ -216,36 +216,38 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
   }
 
   return (
-    <main className="flex-1 flex flex-col items-center px-4 py-10">
+    <main className="flex-1 flex flex-col items-center px-4 py-10 sm:py-14">
       <div className="w-full max-w-xl">
         <Link
           href="/"
-          className="text-sm text-slate-400 hover:text-slate-900 mb-4 inline-block"
+          className="text-sm font-medium text-slate-400 hover:text-slate-900 mb-4 inline-flex items-center gap-1 transition-colors"
         >
           ← 내 일정 목록
         </Link>
 
-        <div className="rounded-md border border-slate-200 bg-white p-4 mb-6">
-          <label className="block text-xs text-slate-500 mb-1">공유 링크</label>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm mb-6">
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">
+            공유 링크
+          </label>
           <div className="flex gap-2">
             <input
               readOnly
               value={shareUrl}
-              className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
               onFocus={(e) => e.currentTarget.select()}
             />
             <button
               onClick={copyShareUrl}
-              className="shrink-0 rounded-md bg-slate-900 text-white px-3 text-sm hover:bg-slate-800"
+              className="shrink-0 rounded-lg bg-slate-900 text-white px-4 text-sm font-medium hover:bg-slate-800 transition-colors"
             >
               {copied ? "복사됨" : "복사"}
             </button>
           </div>
         </div>
 
-        <div className="space-y-3 mb-8">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4 mb-8">
           <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="title">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="title">
               제목
             </label>
             <input
@@ -254,12 +256,12 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onChange={(e) => setTitle(e.target.value)}
               onBlur={saveMeta}
               maxLength={LIMITS.title}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
             />
           </div>
           <div>
             <label
-              className="block text-sm font-medium mb-1"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
               htmlFor="description"
             >
               설명
@@ -271,111 +273,114 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onBlur={saveMeta}
               maxLength={LIMITS.description}
               rows={3}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
             />
           </div>
           {savingMeta && <p className="text-xs text-slate-400">저장 중...</p>}
         </div>
 
-        <h2 className="text-sm font-semibold text-slate-500 mb-3">
-          체크리스트 항목 ({data.items.length})
+        <h2 className="text-sm font-semibold text-slate-600 mb-3">
+          체크리스트 항목 <span className="text-slate-400">({data.items.length})</span>
         </h2>
         <ul className="space-y-2 mb-4">
           {data.items.map((item, index) => (
             <li key={item.id}>
               {(index === 0 || data.items[index - 1].groupLabel !== item.groupLabel) &&
                 item.groupLabel && (
-                  <h3 className="text-xs font-semibold text-slate-400 mt-4 mb-1.5 first:mt-0">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full mt-5 mb-2 first:mt-0">
+                    <span aria-hidden>📅</span>
                     {item.groupLabel}
                   </h3>
                 )}
-              <div className="rounded-md border border-slate-200 bg-white p-3">
-              {editingId === item.id ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+                {editingId === item.id ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        autoFocus
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        maxLength={LIMITS.itemText}
+                        className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      />
+                      <button
+                        onClick={saveEdit}
+                        className="rounded-lg bg-slate-900 text-white px-3 text-sm font-medium hover:bg-slate-800 transition-colors"
+                      >
+                        저장
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="rounded-lg border border-slate-300 px-3 text-sm text-slate-500 hover:bg-slate-100 transition-colors"
+                      >
+                        취소
+                      </button>
+                    </div>
                     <input
-                      autoFocus
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
+                      value={editingGroup}
+                      onChange={(e) => setEditingGroup(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                      maxLength={LIMITS.itemText}
-                      className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      maxLength={LIMITS.groupLabel}
+                      list="group-options"
+                      placeholder="그룹(날짜) — 비워두면 그룹 없음"
+                      className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400"
                     />
-                    <button
-                      onClick={saveEdit}
-                      className="text-sm text-slate-900 font-medium"
-                    >
-                      저장
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="text-sm text-slate-400"
-                    >
-                      취소
-                    </button>
                   </div>
-                  <input
-                    value={editingGroup}
-                    onChange={(e) => setEditingGroup(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                    maxLength={LIMITS.groupLabel}
-                    list="group-options"
-                    placeholder="그룹(날짜) — 비워두면 그룹 없음"
-                    className="w-full rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-start justify-between gap-2">
-                  <span className="flex-1">{item.text}</span>
-                  <div className="flex gap-1 text-sm shrink-0">
-                    <button
-                      onClick={() => moveItem(index, -1)}
-                      disabled={index === 0}
-                      className="px-1.5 text-slate-400 hover:text-slate-900 disabled:opacity-30"
-                      aria-label="위로"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      onClick={() => moveItem(index, 1)}
-                      disabled={index === data.items.length - 1}
-                      className="px-1.5 text-slate-400 hover:text-slate-900 disabled:opacity-30"
-                      aria-label="아래로"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      onClick={() => startEdit(item.id, item.text, item.groupLabel)}
-                      className="px-1.5 text-slate-400 hover:text-slate-900"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="px-1.5 text-red-400 hover:text-red-600"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-2 flex flex-wrap gap-1">
-                {item.checkedBy.length === 0 ? (
-                  <span className="text-xs text-slate-400">
-                    아직 체크한 사람이 없습니다.
-                  </span>
                 ) : (
-                  item.checkedBy.map((c) => (
-                    <span
-                      key={c.nickname}
-                      className="text-xs rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5"
-                    >
-                      ✓ {c.nickname}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex-1 text-[15px] text-slate-900 pt-0.5">
+                      {item.text}
                     </span>
-                  ))
+                    <div className="flex gap-0.5 text-sm shrink-0">
+                      <button
+                        onClick={() => moveItem(index, -1)}
+                        disabled={index === 0}
+                        className="w-8 h-8 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                        aria-label="위로"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => moveItem(index, 1)}
+                        disabled={index === data.items.length - 1}
+                        className="w-8 h-8 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                        aria-label="아래로"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => startEdit(item.id, item.text, item.groupLabel)}
+                        className="px-2 h-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="px-2 h-8 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </div>
+
+                <div className="mt-2.5 flex flex-wrap gap-1">
+                  {item.checkedBy.length === 0 ? (
+                    <span className="text-xs text-slate-400">
+                      아직 체크한 사람이 없습니다.
+                    </span>
+                  ) : (
+                    item.checkedBy.map((c) => (
+                      <span
+                        key={c.nickname}
+                        className="text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1"
+                      >
+                        ✓ {c.nickname}
+                      </span>
+                    ))
+                  )}
+                </div>
               </div>
             </li>
           ))}
@@ -387,13 +392,13 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
           ))}
         </datalist>
 
-        <form onSubmit={addItem} className="flex gap-2 mb-2">
+        <form onSubmit={addItem} className="flex flex-wrap gap-2 mb-2">
           <input
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
             maxLength={LIMITS.itemText}
             placeholder="새 항목 추가"
-            className="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="flex-1 basis-full sm:basis-0 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
           />
           <input
             value={newItemGroup}
@@ -401,12 +406,12 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             maxLength={LIMITS.groupLabel}
             list="group-options"
             placeholder="그룹(날짜)"
-            className="w-32 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="flex-1 sm:flex-none sm:w-32 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
           />
           <button
             type="submit"
             disabled={addingItem}
-            className="rounded-md bg-slate-900 text-white px-4 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+            className="shrink-0 whitespace-nowrap rounded-lg bg-slate-900 text-white px-4 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
           >
             추가
           </button>
@@ -419,10 +424,10 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
         {showImport ? (
           <form
             onSubmit={importMarkdown}
-            className="rounded-md border border-slate-200 bg-white p-4 space-y-2"
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3"
           >
             <div className="flex items-start justify-between gap-2">
-              <label className="block text-xs text-slate-500">
+              <label className="block text-xs text-slate-500 leading-relaxed">
                 마크다운으로 여러 항목 한 번에 추가 — {"`"}##{"`"} 줄은 날짜/그룹
                 제목, {"`"}-{"`"} 줄은 항목으로 인식됩니다. 기존 항목은 지우거나
                 바꾸지 않고 새 항목만 추가됩니다.
@@ -430,7 +435,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               <button
                 type="button"
                 onClick={copyAiPrompt}
-                className="shrink-0 text-xs text-slate-500 border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100 whitespace-nowrap"
+                className="shrink-0 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 transition-colors whitespace-nowrap"
               >
                 {promptCopied ? "복사됨" : "AI 프롬프트 복사"}
               </button>
@@ -440,7 +445,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onChange={(e) => setImportText(e.target.value)}
               rows={6}
               placeholder={"## 8/20 (목)\n- 물 준비\n- 명단 확인"}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
             />
             {importMessage && (
               <p className="text-xs text-slate-500">{importMessage}</p>
@@ -449,14 +454,14 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               <button
                 type="submit"
                 disabled={importing}
-                className="rounded-md bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-lg bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
               >
                 {importing ? "가져오는 중..." : "가져오기"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowImport(false)}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
+                className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 닫기
               </button>
@@ -466,7 +471,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
           <button
             type="button"
             onClick={() => setShowImport(true)}
-            className="text-sm text-slate-500 hover:text-slate-900"
+            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
           >
             + 마크다운으로 여러 항목 가져오기
           </button>

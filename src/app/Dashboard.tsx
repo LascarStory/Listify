@@ -74,51 +74,60 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
   }
 
   return (
-    <main className="flex-1 flex flex-col items-center px-4 py-12">
+    <main className="flex-1 flex flex-col items-center px-4 py-10 sm:py-14">
       <div className="w-full max-w-xl">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="text-2xl font-bold">Listify</h1>
+        <div className="flex items-center justify-between mb-1.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Listify
+          </h1>
           <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span>{userEmail}</span>
+            <span className="hidden sm:inline">{userEmail}</span>
             <button
               onClick={() => signOut()}
-              className="hover:text-slate-900"
+              className="rounded-md px-2 py-1 hover:bg-slate-200/60 hover:text-slate-900 transition-colors"
             >
               로그아웃
             </button>
           </div>
         </div>
-        <p className="text-slate-500 mb-8">
+        <p className="text-slate-500 leading-relaxed mb-8">
           일정과 체크리스트를 만들고 링크로 공유하세요. 참여자는 닉네임을
           입력하고 체크하면, 누가 체크했는지 함께 표시됩니다.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4"
+        >
           <div>
-            <label className="block text-sm font-medium mb-1">제목</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              제목
+            </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={LIMITS.title}
               placeholder="예: 워크샵 준비물 체크리스트"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">설명 (선택)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              설명 (선택)
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={LIMITS.description}
               rows={3}
               placeholder="참여자에게 보여줄 안내 문구를 입력하세요."
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
               체크리스트 항목
             </label>
             <div className="space-y-2">
@@ -129,12 +138,12 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
                     onChange={(e) => updateItem(index, e.target.value)}
                     maxLength={LIMITS.itemText}
                     placeholder={`항목 ${index + 1}`}
-                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
                   />
                   <button
                     type="button"
                     onClick={() => removeItemField(index)}
-                    className="px-3 rounded-md border border-slate-300 text-slate-500 hover:bg-slate-100"
+                    className="w-10 rounded-lg border border-slate-300 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                     aria-label="항목 삭제"
                   >
                     ✕
@@ -145,7 +154,7 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
             <button
               type="button"
               onClick={addItemField}
-              className="mt-2 text-sm text-slate-600 hover:text-slate-900"
+              className="mt-2.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
             >
               + 항목 추가
             </button>
@@ -156,34 +165,33 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-800 disabled:opacity-50"
+            className="w-full rounded-lg bg-slate-900 text-white py-3 font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
           >
             {submitting ? "만드는 중..." : "일정 만들기"}
           </button>
         </form>
 
         {schedules && schedules.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-sm font-semibold text-slate-500 mb-3">
-              내 일정 ({schedules.length})
+          <div className="mt-10">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">
+              내 일정 <span className="text-slate-400">({schedules.length})</span>
             </h2>
             <ul className="space-y-2">
               {schedules.map((schedule) => (
-                <li
-                  key={schedule.id}
-                  className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2"
-                >
-                  <div className="truncate">
-                    <span>{schedule.title}</span>
-                    <span className="text-xs text-slate-400 ml-2">
-                      {schedule.checkedCount}/{schedule.itemCount}개 체크됨
-                    </span>
-                  </div>
+                <li key={schedule.id}>
                   <Link
                     href={`/manage/${schedule.id}`}
-                    className="text-sm text-slate-600 hover:text-slate-900 shrink-0 ml-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-slate-300 hover:shadow transition"
                   >
-                    관리하기 →
+                    <div className="truncate">
+                      <span className="font-medium text-slate-900">
+                        {schedule.title}
+                      </span>
+                      <span className="text-sm text-slate-400 ml-2">
+                        {schedule.checkedCount}/{schedule.itemCount}개 체크됨
+                      </span>
+                    </div>
+                    <span className="text-sm text-slate-400 shrink-0">→</span>
                   </Link>
                 </li>
               ))}

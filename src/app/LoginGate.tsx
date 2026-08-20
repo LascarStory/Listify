@@ -9,20 +9,22 @@ export default function LoginGate({
 }) {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm text-center">
-        <h1 className="text-2xl font-bold mb-1">Listify</h1>
-        <p className="text-slate-500 mb-8">
+      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-1.5">
+          Listify
+        </h1>
+        <p className="text-slate-500 leading-relaxed mb-8">
           일정과 체크리스트를 만들고 링크로 공유하세요.
         </p>
 
         {deniedEmail ? (
-          <div className="space-y-3">
-            <p className="text-sm text-red-600">
+          <div className="space-y-4">
+            <p className="text-sm text-red-600 leading-relaxed">
               <strong>{deniedEmail}</strong> 계정은 관리자 권한이 없습니다.
             </p>
             <button
               onClick={() => signOut()}
-              className="w-full rounded-md border border-slate-300 py-2.5 font-medium hover:bg-slate-100"
+              className="w-full rounded-lg border border-slate-300 py-3 font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               다른 계정으로 로그인
             </button>
@@ -30,7 +32,7 @@ export default function LoginGate({
         ) : (
           <button
             onClick={() => signIn("google")}
-            className="w-full rounded-md bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-800"
+            className="w-full rounded-lg bg-slate-900 text-white py-3 font-medium hover:bg-slate-800 transition-colors"
           >
             Google로 로그인
           </button>
