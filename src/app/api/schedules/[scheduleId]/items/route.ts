@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/adminAuth";
-import { LIMITS, cleanText } from "@/lib/validation";
+import { LIMITS, cleanOptionalText, cleanText } from "@/lib/validation";
 
 export async function POST(
   req: NextRequest,
@@ -46,11 +46,18 @@ export async function POST(
     -1
   );
 
+  const groupLabel = cleanOptionalText(body?.groupLabel, LIMITS.groupLabel) ?? null;
+
   const item = await prisma.checklistItem.create({
-    data: { scheduleId: schedule.id, text, order: maxOrder + 1 },
+    data: { scheduleId: schedule.id, text, groupLabel, order: maxOrder + 1 },
   });
 
-  return NextResponse.json({ id: item.id, text: item.text, order: item.order });
+  return NextResponse.json({
+    id: item.id,
+    text: item.text,
+    groupLabel: item.groupLabel,
+    order: item.order,
+  });
 }
 
 export async function PATCH(

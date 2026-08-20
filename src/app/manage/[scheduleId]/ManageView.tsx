@@ -7,6 +7,24 @@ import type { AdminScheduleData } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 5000;
 
+const AI_PROMPT_TEMPLATE = `아래 마크다운 체크리스트 형식으로 답해줘.
+
+규칙:
+- "## 제목" 줄은 날짜/그룹 제목이야.
+- "- 내용" 줄은 체크리스트 항목이야.
+- 다른 설명 없이 아래 형식의 마크다운만 출력해줘.
+
+예시:
+## 8/20 (목)
+- 물 준비
+- 명단 확인
+
+## 8/21 (금)
+- 장소 예약
+
+---
+요청: (여기에 원하는 체크리스트 내용을 적어주세요. 예: "2박 3일 제주도 여행 준비물 체크리스트 만들어줘")`;
+
 export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [data, setData] = useState<AdminScheduleData | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -14,14 +32,17 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [description, setDescription] = useState("");
   const [savingMeta, setSavingMeta] = useState(false);
   const [newItemText, setNewItemText] = useState("");
+  const [newItemGroup, setNewItemGroup] = useState("");
   const [addingItem, setAddingItem] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+  const [editingGroup, setEditingGroup] = useState("");
   const [copied, setCopied] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/schedules/${scheduleId}`, {
@@ -70,18 +91,21 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
       await fetch(`/api/schedules/${scheduleId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: newItemText }),
+        body: JSON.stringify({ text: newItemText, groupLabel: newItemGroup }),
       });
       setNewItemText("");
+      // Keep the group filled in so adding several items to the same
+      // group in a row doesn't require retyping it each time.
       await load();
     } finally {
       setAddingItem(false);
     }
   }
 
-  function startEdit(id: string, text: string) {
+  function startEdit(id: string, text: string, groupLabel: string | null) {
     setEditingId(id);
     setEditingText(text);
+    setEditingGroup(groupLabel ?? "");
   }
 
   async function saveEdit() {
@@ -92,7 +116,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     await fetch(`/api/schedules/${scheduleId}/items/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: editingText }),
+      body: JSON.stringify({ text: editingText, groupLabel: editingGroup }),
     });
     setEditingId(null);
     await load();
@@ -160,6 +184,20 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
+
+  async function copyAiPrompt() {
+    await navigator.clipboard.writeText(AI_PROMPT_TEMPLATE);
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 1500);
+  }
+
+  const groupOptions = Array.from(
+    new Set(
+      (data?.items ?? [])
+        .map((item) => item.groupLabel)
+        .filter((label): label is string => !!label)
+    )
+  );
 
   if (notFound) {
     return (
@@ -253,27 +291,38 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                 )}
               <div className="rounded-md border border-slate-200 bg-white p-3">
               {editingId === item.id ? (
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      maxLength={LIMITS.itemText}
+                      className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    />
+                    <button
+                      onClick={saveEdit}
+                      className="text-sm text-slate-900 font-medium"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-sm text-slate-400"
+                    >
+                      취소
+                    </button>
+                  </div>
                   <input
-                    autoFocus
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
+                    value={editingGroup}
+                    onChange={(e) => setEditingGroup(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                    maxLength={LIMITS.itemText}
-                    className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    maxLength={LIMITS.groupLabel}
+                    list="group-options"
+                    placeholder="그룹(날짜) — 비워두면 그룹 없음"
+                    className="w-full rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400"
                   />
-                  <button
-                    onClick={saveEdit}
-                    className="text-sm text-slate-900 font-medium"
-                  >
-                    저장
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="text-sm text-slate-400"
-                  >
-                    취소
-                  </button>
                 </div>
               ) : (
                 <div className="flex items-start justify-between gap-2">
@@ -296,7 +345,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                       ↓
                     </button>
                     <button
-                      onClick={() => startEdit(item.id, item.text)}
+                      onClick={() => startEdit(item.id, item.text, item.groupLabel)}
                       className="px-1.5 text-slate-400 hover:text-slate-900"
                     >
                       수정
@@ -332,13 +381,27 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
           ))}
         </ul>
 
-        <form onSubmit={addItem} className="flex gap-2 mb-6">
+        <datalist id="group-options">
+          {groupOptions.map((label) => (
+            <option key={label} value={label} />
+          ))}
+        </datalist>
+
+        <form onSubmit={addItem} className="flex gap-2 mb-2">
           <input
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
             maxLength={LIMITS.itemText}
             placeholder="새 항목 추가"
             className="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          />
+          <input
+            value={newItemGroup}
+            onChange={(e) => setNewItemGroup(e.target.value)}
+            maxLength={LIMITS.groupLabel}
+            list="group-options"
+            placeholder="그룹(날짜)"
+            className="w-32 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
           <button
             type="submit"
@@ -348,17 +411,30 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             추가
           </button>
         </form>
+        <p className="text-xs text-slate-400 mb-6">
+          그룹(날짜)을 입력하면 같은 그룹 항목끼리 묶여서 표시됩니다. 비워두면
+          그룹 없이 추가됩니다.
+        </p>
 
         {showImport ? (
           <form
             onSubmit={importMarkdown}
             className="rounded-md border border-slate-200 bg-white p-4 space-y-2"
           >
-            <label className="block text-xs text-slate-500">
-              마크다운으로 여러 항목 한 번에 추가 — {"`"}##{"`"} 줄은 날짜/그룹
-              제목, {"`"}-{"`"} 줄은 항목으로 인식됩니다. 기존 항목은 지우거나
-              바꾸지 않고 새 항목만 추가됩니다.
-            </label>
+            <div className="flex items-start justify-between gap-2">
+              <label className="block text-xs text-slate-500">
+                마크다운으로 여러 항목 한 번에 추가 — {"`"}##{"`"} 줄은 날짜/그룹
+                제목, {"`"}-{"`"} 줄은 항목으로 인식됩니다. 기존 항목은 지우거나
+                바꾸지 않고 새 항목만 추가됩니다.
+              </label>
+              <button
+                type="button"
+                onClick={copyAiPrompt}
+                className="shrink-0 text-xs text-slate-500 border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100 whitespace-nowrap"
+              >
+                {promptCopied ? "복사됨" : "AI 프롬프트 복사"}
+              </button>
+            </div>
             <textarea
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
