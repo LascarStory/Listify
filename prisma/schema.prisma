@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  shareToken  String   @unique
+  adminToken  String   @unique
+  title       String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items ChecklistItem[]
+}
+
+model ChecklistItem {
+  id         String   @id @default(cuid())
+  scheduleId String
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  text       String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  checks CheckMark[]
+}
+
+model CheckMark {
+  id       String        @id @default(cuid())
+  itemId   String
+  item     ChecklistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  nickname String
+  checkedAt DateTime     @default(now())
+
+  @@unique([itemId, nickname])
+}
