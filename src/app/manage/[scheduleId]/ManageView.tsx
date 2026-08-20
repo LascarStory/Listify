@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LIMITS } from "@/lib/validation";
 import type { AdminScheduleData } from "@/lib/types";
@@ -26,7 +27,9 @@ const AI_PROMPT_TEMPLATE = `아래 마크다운 체크리스트 형식으로 답
 요청: (여기에 원하는 체크리스트 내용을 적어주세요. 예: "2박 3일 제주도 여행 준비물 체크리스트 만들어줘")`;
 
 export default function ManageView({ scheduleId }: { scheduleId: string }) {
+  const router = useRouter();
   const [data, setData] = useState<AdminScheduleData | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -191,6 +194,23 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     setTimeout(() => setPromptCopied(false), 1500);
   }
 
+  async function deleteSchedule() {
+    if (
+      !confirm(
+        "이 일정을 삭제할까요? 체크리스트 항목과 체크 기록이 모두 삭제되며 되돌릴 수 없습니다."
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await fetch(`/api/schedules/${scheduleId}`, { method: "DELETE" });
+      router.push("/");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const groupOptions = Array.from(
     new Set(
       (data?.items ?? [])
@@ -326,6 +346,20 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                       placeholder="그룹(날짜) — 비워두면 그룹 없음"
                       className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     />
+                    {groupOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {groupOptions.map((label) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => setEditingGroup(label)}
+                            className="text-xs rounded-full border border-slate-300 px-2.5 py-1 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2">
@@ -416,6 +450,20 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             추가
           </button>
         </form>
+        {groupOptions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {groupOptions.map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setNewItemGroup(label)}
+                className="text-xs rounded-full border border-slate-300 px-2.5 py-1 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-slate-400 mb-6">
           그룹(날짜)을 입력하면 같은 그룹 항목끼리 묶여서 표시됩니다. 비워두면
           그룹 없이 추가됩니다.
@@ -476,6 +524,17 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             + 마크다운으로 여러 항목 가져오기
           </button>
         )}
+
+        <div className="mt-10 pt-6 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={deleteSchedule}
+            disabled={deleting}
+            className="text-sm font-medium text-red-500 hover:text-red-600 disabled:opacity-50 transition-colors"
+          >
+            {deleting ? "삭제하는 중..." : "이 일정 전체 삭제"}
+          </button>
+        </div>
       </div>
     </main>
   );
