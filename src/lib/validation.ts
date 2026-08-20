@@ -2,8 +2,10 @@ export const LIMITS = {
   title: 100,
   description: 1000,
   itemText: 200,
+  groupLabel: 50,
   nickname: 20,
   maxItems: 200,
+  markdownImport: 20000,
 } as const;
 
 export function cleanText(value: unknown, maxLength: number): string | null {

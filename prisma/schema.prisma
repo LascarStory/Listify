@@ -26,6 +26,7 @@ model ChecklistItem {
   scheduleId String
   schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   text       String
+  groupLabel String?
   order      Int      @default(0)
   createdAt  DateTime @default(now())
 

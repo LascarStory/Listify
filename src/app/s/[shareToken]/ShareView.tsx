@@ -163,16 +163,22 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
           <p className="text-slate-400">등록된 항목이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
-            {data.items.map((item) => {
+            {data.items.map((item, index) => {
               const checked = item.checkedBy.some(
                 (c) => c.nickname === nickname
               );
               const pending = pendingIds.has(item.id);
+              const showGroupHeader =
+                item.groupLabel &&
+                (index === 0 || data.items[index - 1].groupLabel !== item.groupLabel);
               return (
-                <li
-                  key={item.id}
-                  className="rounded-md border border-slate-200 bg-white p-3"
-                >
+                <li key={item.id}>
+                  {showGroupHeader && (
+                    <h3 className="text-xs font-semibold text-slate-400 mt-4 mb-1.5 first:mt-0">
+                      {item.groupLabel}
+                    </h3>
+                  )}
+                  <div className="rounded-md border border-slate-200 bg-white p-3">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -204,6 +210,7 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                         ✓ {c.nickname}
                       </span>
                     ))}
+                  </div>
                   </div>
                 </li>
               );

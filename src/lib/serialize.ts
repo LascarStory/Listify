@@ -13,6 +13,7 @@ export function serializeSchedule(schedule: ScheduleWithItems) {
       .map((item) => ({
         id: item.id,
         text: item.text,
+        groupLabel: item.groupLabel,
         order: item.order,
         checkedBy: item.checks
           .map((check) => ({

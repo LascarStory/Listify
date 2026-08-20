@@ -18,6 +18,10 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/schedules/${scheduleId}`, {
@@ -117,6 +121,34 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     await load();
   }
 
+  async function importMarkdown(e: React.FormEvent) {
+    e.preventDefault();
+    if (!importText.trim()) return;
+    setImporting(true);
+    setImportMessage(null);
+    try {
+      const res = await fetch(`/api/schedules/${scheduleId}/items/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markdown: importText }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setImportMessage(json.error ?? "가져오지 못했습니다.");
+        return;
+      }
+      setImportMessage(
+        json.skipped > 0
+          ? `${json.added}개 추가됨 (항목 개수 제한으로 ${json.skipped}개는 건너뜀)`
+          : `${json.added}개 추가됨`
+      );
+      setImportText("");
+      await load();
+    } finally {
+      setImporting(false);
+    }
+  }
+
   const shareUrl =
     typeof window !== "undefined" && data
       ? `${window.location.origin}/s/${data.shareToken}`
@@ -212,10 +244,14 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
         </h2>
         <ul className="space-y-2 mb-4">
           {data.items.map((item, index) => (
-            <li
-              key={item.id}
-              className="rounded-md border border-slate-200 bg-white p-3"
-            >
+            <li key={item.id}>
+              {(index === 0 || data.items[index - 1].groupLabel !== item.groupLabel) &&
+                item.groupLabel && (
+                  <h3 className="text-xs font-semibold text-slate-400 mt-4 mb-1.5 first:mt-0">
+                    {item.groupLabel}
+                  </h3>
+                )}
+              <div className="rounded-md border border-slate-200 bg-white p-3">
               {editingId === item.id ? (
                 <div className="flex gap-2">
                   <input
@@ -291,11 +327,12 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                   ))
                 )}
               </div>
+              </div>
             </li>
           ))}
         </ul>
 
-        <form onSubmit={addItem} className="flex gap-2">
+        <form onSubmit={addItem} className="flex gap-2 mb-6">
           <input
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
@@ -311,6 +348,53 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             추가
           </button>
         </form>
+
+        {showImport ? (
+          <form
+            onSubmit={importMarkdown}
+            className="rounded-md border border-slate-200 bg-white p-4 space-y-2"
+          >
+            <label className="block text-xs text-slate-500">
+              마크다운으로 여러 항목 한 번에 추가 — {"`"}##{"`"} 줄은 날짜/그룹
+              제목, {"`"}-{"`"} 줄은 항목으로 인식됩니다. 기존 항목은 지우거나
+              바꾸지 않고 새 항목만 추가됩니다.
+            </label>
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              rows={6}
+              placeholder={"## 8/20 (목)\n- 물 준비\n- 명단 확인"}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+            {importMessage && (
+              <p className="text-xs text-slate-500">{importMessage}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={importing}
+                className="rounded-md bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+              >
+                {importing ? "가져오는 중..." : "가져오기"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowImport(false)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
+              >
+                닫기
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="text-sm text-slate-500 hover:text-slate-900"
+          >
+            + 마크다운으로 여러 항목 가져오기
+          </button>
+        )}
       </div>
     </main>
   );
