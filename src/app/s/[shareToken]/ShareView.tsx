@@ -115,11 +115,11 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
             onChange={(e) => setNicknameInput(e.target.value)}
             maxLength={LIMITS.nickname}
             placeholder="예: 홍길동"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 mb-3 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
           />
           <button
             type="submit"
-            className="w-full rounded-lg bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-800 transition-colors"
+            className="w-full rounded-lg bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 transition-colors"
           >
             입장하기
           </button>
@@ -188,7 +188,7 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                         checked={checked}
                         disabled={pending}
                         onChange={(e) => toggleItem(item.id, e.target.checked)}
-                        className="mt-0.5 h-5 w-5 shrink-0 accent-slate-900"
+                        className="mt-0.5 h-5 w-5 shrink-0 accent-indigo-600"
                       />
                       <span
                         className={
@@ -206,7 +206,7 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                           key={c.nickname}
                           className={
                             c.nickname === nickname
-                              ? "text-xs font-medium rounded-full bg-slate-900 text-white px-2.5 py-1"
+                              ? "text-xs font-medium rounded-full bg-indigo-600 text-white px-2.5 py-1"
                               : "text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1"
                           }
                         >

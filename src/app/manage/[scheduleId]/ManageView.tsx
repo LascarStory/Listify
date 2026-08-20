@@ -238,7 +238,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             />
             <button
               onClick={copyShareUrl}
-              className="shrink-0 rounded-lg bg-slate-900 text-white px-4 text-sm font-medium hover:bg-slate-800 transition-colors"
+              className="shrink-0 rounded-lg bg-indigo-600 text-white px-4 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               {copied ? "복사됨" : "복사"}
             </button>
@@ -256,7 +256,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onChange={(e) => setTitle(e.target.value)}
               onBlur={saveMeta}
               maxLength={LIMITS.title}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
             />
           </div>
           <div>
@@ -273,7 +273,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onBlur={saveMeta}
               maxLength={LIMITS.description}
               rows={3}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
             />
           </div>
           {savingMeta && <p className="text-xs text-slate-400">저장 중...</p>}
@@ -302,11 +302,11 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                         onChange={(e) => setEditingText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && saveEdit()}
                         maxLength={LIMITS.itemText}
-                        className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
                       <button
                         onClick={saveEdit}
-                        className="rounded-lg bg-slate-900 text-white px-3 text-sm font-medium hover:bg-slate-800 transition-colors"
+                        className="rounded-lg bg-indigo-600 text-white px-3 text-sm font-medium hover:bg-indigo-700 transition-colors"
                       >
                         저장
                       </button>
@@ -324,7 +324,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                       maxLength={LIMITS.groupLabel}
                       list="group-options"
                       placeholder="그룹(날짜) — 비워두면 그룹 없음"
-                      className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     />
                   </div>
                 ) : (
@@ -398,7 +398,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             onChange={(e) => setNewItemText(e.target.value)}
             maxLength={LIMITS.itemText}
             placeholder="새 항목 추가"
-            className="flex-1 basis-full sm:basis-0 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+            className="flex-1 basis-full sm:basis-0 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
           />
           <input
             value={newItemGroup}
@@ -406,12 +406,12 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             maxLength={LIMITS.groupLabel}
             list="group-options"
             placeholder="그룹(날짜)"
-            className="flex-1 sm:flex-none sm:w-32 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+            className="flex-1 sm:flex-none sm:w-32 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
           />
           <button
             type="submit"
             disabled={addingItem}
-            className="shrink-0 whitespace-nowrap rounded-lg bg-slate-900 text-white px-4 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
+            className="shrink-0 whitespace-nowrap rounded-lg bg-indigo-600 text-white px-4 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
             추가
           </button>
@@ -445,7 +445,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               onChange={(e) => setImportText(e.target.value)}
               rows={6}
               placeholder={"## 8/20 (목)\n- 물 준비\n- 명단 확인"}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
             />
             {importMessage && (
               <p className="text-xs text-slate-500">{importMessage}</p>
@@ -454,7 +454,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
               <button
                 type="submit"
                 disabled={importing}
-                className="rounded-lg bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-indigo-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {importing ? "가져오는 중..." : "가져오기"}
               </button>

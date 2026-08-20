@@ -32,7 +32,7 @@ export default function LoginGate({
         ) : (
           <button
             onClick={() => signIn("google")}
-            className="w-full rounded-lg bg-slate-900 text-white py-3 font-medium hover:bg-slate-800 transition-colors"
+            className="w-full rounded-lg bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700 transition-colors"
           >
             Google로 로그인
           </button>

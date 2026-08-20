@@ -77,7 +77,8 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
     <main className="flex-1 flex flex-col items-center px-4 py-10 sm:py-14">
       <div className="w-full max-w-xl">
         <div className="flex items-center justify-between mb-1.5">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900">
+            <span aria-hidden>📋</span>
             Listify
           </h1>
           <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -108,7 +109,7 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={LIMITS.title}
               placeholder="예: 워크샵 준비물 체크리스트"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
             />
           </div>
 
@@ -122,7 +123,7 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
               maxLength={LIMITS.description}
               rows={3}
               placeholder="참여자에게 보여줄 안내 문구를 입력하세요."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
             />
           </div>
 
@@ -138,7 +139,7 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
                     onChange={(e) => updateItem(index, e.target.value)}
                     maxLength={LIMITS.itemText}
                     placeholder={`항목 ${index + 1}`}
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-shadow"
+                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
                   />
                   <button
                     type="button"
@@ -165,7 +166,7 @@ export default function Dashboard({ userEmail }: { userEmail: string }) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-slate-900 text-white py-3 font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
+            className="w-full rounded-lg bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
             {submitting ? "만드는 중..." : "일정 만들기"}
           </button>
