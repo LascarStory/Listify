@@ -14,6 +14,8 @@ export function serializeSchedule(schedule: ScheduleWithItems) {
         id: item.id,
         text: item.text,
         groupLabel: item.groupLabel,
+        amount: item.amount,
+        payerNickname: item.payerNickname,
         order: item.order,
         checkedBy: item.checks
           .map((check) => ({

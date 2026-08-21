@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LIMITS } from "@/lib/validation";
 import type { AdminScheduleData } from "@/lib/types";
+import Settlement from "@/app/Settlement";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -40,6 +41,8 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingGroup, setEditingGroup] = useState("");
+  const [editingAmount, setEditingAmount] = useState("");
+  const [editingPayer, setEditingPayer] = useState("");
   const [copied, setCopied] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
@@ -105,10 +108,18 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     }
   }
 
-  function startEdit(id: string, text: string, groupLabel: string | null) {
+  function startEdit(
+    id: string,
+    text: string,
+    groupLabel: string | null,
+    amount: number | null,
+    payerNickname: string | null
+  ) {
     setEditingId(id);
     setEditingText(text);
     setEditingGroup(groupLabel ?? "");
+    setEditingAmount(amount != null ? String(amount) : "");
+    setEditingPayer(payerNickname ?? "");
   }
 
   async function saveEdit() {
@@ -119,7 +130,12 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     await fetch(`/api/schedules/${scheduleId}/items/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: editingText, groupLabel: editingGroup }),
+      body: JSON.stringify({
+        text: editingText,
+        groupLabel: editingGroup,
+        amount: editingAmount,
+        payerNickname: editingPayer,
+      }),
     });
     setEditingId(null);
     await load();
@@ -216,6 +232,14 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
       (data?.items ?? [])
         .map((item) => item.groupLabel)
         .filter((label): label is string => !!label)
+    )
+  );
+
+  const nicknameOptions = Array.from(
+    new Set(
+      (data?.items ?? []).flatMap((item) =>
+        item.checkedBy.map((c) => c.nickname)
+      )
     )
   );
 
@@ -360,6 +384,41 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                         ))}
                       </div>
                     )}
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={LIMITS.maxAmount}
+                        value={editingAmount}
+                        onChange={(e) => setEditingAmount(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        placeholder="금액(원) — 비워두면 비용 없음"
+                        className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                      <input
+                        value={editingPayer}
+                        onChange={(e) => setEditingPayer(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        maxLength={LIMITS.nickname}
+                        list="nickname-options"
+                        placeholder="낸 사람"
+                        className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                    </div>
+                    {nicknameOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {nicknameOptions.map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => setEditingPayer(name)}
+                            className="text-xs rounded-full border border-slate-300 px-2.5 py-1 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2">
@@ -384,7 +443,15 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                         ↓
                       </button>
                       <button
-                        onClick={() => startEdit(item.id, item.text, item.groupLabel)}
+                        onClick={() =>
+                          startEdit(
+                            item.id,
+                            item.text,
+                            item.groupLabel,
+                            item.amount,
+                            item.payerNickname
+                          )
+                        }
                         className="px-2 h-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                       >
                         수정
@@ -397,6 +464,13 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                       </button>
                     </div>
                   </div>
+                )}
+
+                {editingId !== item.id && item.amount != null && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    💰 {item.amount.toLocaleString("ko-KR")}원
+                    {item.payerNickname && ` · ${item.payerNickname} 냄`}
+                  </p>
                 )}
 
                 <div className="mt-2.5 flex flex-wrap gap-1">
@@ -425,6 +499,13 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             <option key={label} value={label} />
           ))}
         </datalist>
+        <datalist id="nickname-options">
+          {nicknameOptions.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+
+        <Settlement items={data.items} showEmptyHint />
 
         <form onSubmit={addItem} className="flex flex-wrap gap-2 mb-2">
           <input

@@ -7,6 +7,8 @@ export type ScheduleItem = {
   id: string;
   text: string;
   groupLabel: string | null;
+  amount: number | null;
+  payerNickname: string | null;
   order: number;
   checkedBy: CheckedBy[];
 };

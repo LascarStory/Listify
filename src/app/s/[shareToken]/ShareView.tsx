@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LIMITS } from "@/lib/validation";
 import type { ScheduleData } from "@/lib/types";
+import Settlement from "@/app/Settlement";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -193,6 +194,12 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                         {item.text}
                       </span>
                     </label>
+                    {item.amount != null && (
+                      <p className="mt-1.5 ml-8 text-xs text-slate-500">
+                        💰 {item.amount.toLocaleString("ko-KR")}원
+                        {item.payerNickname && ` · ${item.payerNickname} 냄`}
+                      </p>
+                    )}
                     <div className="mt-2.5 ml-8 flex flex-wrap gap-1">
                       {item.checkedBy.map((c) => (
                         <span
@@ -213,6 +220,10 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
             })}
           </ul>
         )}
+
+        <div className="mt-6">
+          <Settlement items={data.items} highlightNickname={nickname} />
+        </div>
       </div>
     </main>
   );
