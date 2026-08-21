@@ -15,7 +15,6 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
   const [nicknameInput, setNicknameInput] = useState("");
   const [data, setData] = useState<ScheduleData | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const stored = localStorage.getItem(nicknameKey(shareToken));
@@ -54,10 +53,13 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
     setNickname(null);
   }
 
-  async function toggleItem(itemId: string, checked: boolean) {
+  function toggleItem(itemId: string, checked: boolean) {
     if (!nickname || !data) return;
-    setPendingIds((prev) => new Set(prev).add(itemId));
 
+    // Update the UI immediately; the request happens in the background and
+    // isn't awaited, so a slow network never makes the checkbox feel stuck.
+    // The next poll (every POLL_INTERVAL_MS) reconciles with the server,
+    // which also covers the rare case where the request fails.
     setData({
       ...data,
       items: data.items.map((item) =>
@@ -72,20 +74,13 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
       ),
     });
 
-    try {
-      await fetch(`/api/share/${shareToken}/items/${itemId}/check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, checked }),
-      });
-      await load();
-    } finally {
-      setPendingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      });
-    }
+    fetch(`/api/share/${shareToken}/items/${itemId}/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, checked }),
+    }).catch(() => {
+      // Ignored — the next poll resyncs from the server either way.
+    });
   }
 
   if (notFound) {
@@ -169,7 +164,6 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
               const checked = item.checkedBy.some(
                 (c) => c.nickname === nickname
               );
-              const pending = pendingIds.has(item.id);
               const showGroupHeader =
                 item.groupLabel &&
                 (index === 0 || data.items[index - 1].groupLabel !== item.groupLabel);
@@ -186,7 +180,6 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                       <input
                         type="checkbox"
                         checked={checked}
-                        disabled={pending}
                         onChange={(e) => toggleItem(item.id, e.target.checked)}
                         className="mt-0.5 h-5 w-5 shrink-0 accent-indigo-600"
                       />
