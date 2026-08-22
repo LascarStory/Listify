@@ -7,6 +7,8 @@ export const LIMITS = {
   maxItems: 200,
   markdownImport: 20000,
   maxAmount: 100_000_000,
+  expenseLabel: 100,
+  maxExpenses: 100,
 } as const;
 
 export function cleanText(value: unknown, maxLength: number): string | null {
@@ -29,17 +31,11 @@ export function cleanOptionalText(
   return trimmed.slice(0, maxLength);
 }
 
-/**
- * Cleans an optional whole-won amount. undefined = field not sent (leave
- * unchanged on update); null or "" = explicitly clear it; otherwise must be
- * a non-negative integer within LIMITS.maxAmount, else undefined (ignored).
- */
-export function cleanOptionalAmount(value: unknown): number | null | undefined {
-  if (value === undefined) return undefined;
-  if (value === null || value === "") return null;
+/** A required whole-won amount: must be a positive integer within LIMITS.maxAmount. */
+export function cleanAmount(value: unknown): number | null {
   const num = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(num)) return undefined;
+  if (!Number.isFinite(num)) return null;
   const rounded = Math.round(num);
-  if (rounded < 0 || rounded > LIMITS.maxAmount) return undefined;
+  if (rounded <= 0 || rounded > LIMITS.maxAmount) return null;
   return rounded;
 }

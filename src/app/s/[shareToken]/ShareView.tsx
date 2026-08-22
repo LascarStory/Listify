@@ -84,6 +84,32 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
     });
   }
 
+  function toggleExpense(expenseId: string, joined: boolean) {
+    if (!nickname || !data) return;
+
+    setData({
+      ...data,
+      expenses: data.expenses.map((expense) =>
+        expense.id === expenseId
+          ? {
+              ...expense,
+              participants: joined
+                ? [...expense.participants, { nickname, joinedAt: new Date().toISOString() }]
+                : expense.participants.filter((p) => p.nickname !== nickname),
+            }
+          : expense
+      ),
+    });
+
+    fetch(`/api/share/${shareToken}/expenses/${expenseId}/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, joined }),
+    }).catch(() => {
+      // Ignored — the next poll resyncs from the server either way.
+    });
+  }
+
   if (notFound) {
     return (
       <main className="flex-1 flex items-center justify-center px-4">
@@ -194,12 +220,6 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                         {item.text}
                       </span>
                     </label>
-                    {item.amount != null && (
-                      <p className="mt-1.5 ml-8 text-xs text-slate-500">
-                        💰 {item.amount.toLocaleString("ko-KR")}원
-                        {item.payerNickname && ` · ${item.payerNickname} 냄`}
-                      </p>
-                    )}
                     <div className="mt-2.5 ml-8 flex flex-wrap gap-1">
                       {item.checkedBy.map((c) => (
                         <span
@@ -221,8 +241,65 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
           </ul>
         )}
 
+        {data.expenses.length > 0 && (
+          <>
+            <h2 className="text-sm font-semibold text-slate-600 mt-8 mb-3">
+              비용 — 나눠 낼 사람 체크
+            </h2>
+            <ul className="space-y-2 mb-6">
+              {data.expenses.map((expense) => {
+                const joined = expense.participants.some(
+                  (p) => p.nickname === nickname
+                );
+                return (
+                  <li
+                    key={expense.id}
+                    className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm"
+                  >
+                    <label className="flex items-start gap-3 cursor-pointer py-0.5">
+                      <input
+                        type="checkbox"
+                        checked={joined}
+                        onChange={(e) => toggleExpense(expense.id, e.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 accent-indigo-600"
+                      />
+                      <span className="flex-1 text-[15px] text-slate-900">
+                        {expense.label}
+                        <span className="block text-xs text-slate-500 mt-0.5">
+                          💰 {expense.amount.toLocaleString("ko-KR")}원 ·{" "}
+                          {expense.payerNickname} 냄
+                        </span>
+                      </span>
+                    </label>
+                    <div className="mt-2.5 ml-8 flex flex-wrap gap-1">
+                      {expense.participants.length === 0 ? (
+                        <span className="text-xs text-slate-400">
+                          아직 나눠 낼 사람이 없습니다.
+                        </span>
+                      ) : (
+                        expense.participants.map((p) => (
+                          <span
+                            key={p.nickname}
+                            className={
+                              p.nickname === nickname
+                                ? "text-xs font-medium rounded-full bg-indigo-600 text-white px-2.5 py-1"
+                                : "text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1"
+                            }
+                          >
+                            ✓ {p.nickname}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+
         <div className="mt-6">
-          <Settlement items={data.items} highlightNickname={nickname} />
+          <Settlement expenses={data.expenses} highlightNickname={nickname} />
         </div>
       </div>
     </main>

@@ -1,7 +1,7 @@
-export type SettlementItem = {
-  amount: number | null;
-  payerNickname: string | null;
-  checkedBy: { nickname: string }[];
+export type SettlementExpense = {
+  amount: number;
+  payerNickname: string;
+  participants: { nickname: string }[];
 };
 
 export type Transfer = {
@@ -20,24 +20,23 @@ export type Settlement = {
 const ROUNDING_SLACK_WON = 1;
 
 /**
- * For each item with an amount and a payer, splits the cost evenly among
- * the nicknames who checked that item (checking a priced item means "I'm
- * splitting this cost"), then reduces everyone's net balance to a minimal
- * set of pairwise transfers.
+ * Splits each expense evenly among its participants, then reduces
+ * everyone's net balance across all expenses to a minimal set of
+ * pairwise transfers.
  */
-export function computeSettlement(items: SettlementItem[]): Settlement {
+export function computeSettlement(expenses: SettlementExpense[]): Settlement {
   const balances = new Map<string, number>();
   const add = (nickname: string, delta: number) => {
     balances.set(nickname, (balances.get(nickname) ?? 0) + delta);
   };
 
-  for (const item of items) {
-    if (!item.amount || item.amount <= 0 || !item.payerNickname) continue;
-    const participants = item.checkedBy.map((c) => c.nickname);
+  for (const expense of expenses) {
+    if (expense.amount <= 0 || !expense.payerNickname) continue;
+    const participants = expense.participants.map((p) => p.nickname);
     if (participants.length === 0) continue;
 
-    const share = item.amount / participants.length;
-    add(item.payerNickname, item.amount);
+    const share = expense.amount / participants.length;
+    add(expense.payerNickname, expense.amount);
     for (const nickname of participants) {
       add(nickname, -share);
     }

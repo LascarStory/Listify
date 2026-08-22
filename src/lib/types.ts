@@ -7,16 +7,29 @@ export type ScheduleItem = {
   id: string;
   text: string;
   groupLabel: string | null;
-  amount: number | null;
-  payerNickname: string | null;
   order: number;
   checkedBy: CheckedBy[];
+};
+
+export type ExpenseParticipant = {
+  nickname: string;
+  joinedAt: string;
+};
+
+export type Expense = {
+  id: string;
+  label: string;
+  amount: number;
+  payerNickname: string;
+  order: number;
+  participants: ExpenseParticipant[];
 };
 
 export type ScheduleData = {
   title: string;
   description: string;
   items: ScheduleItem[];
+  expenses: Expense[];
 };
 
 export type AdminScheduleData = ScheduleData & {

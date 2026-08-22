@@ -41,14 +41,22 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingGroup, setEditingGroup] = useState("");
-  const [editingAmount, setEditingAmount] = useState("");
-  const [editingPayer, setEditingPayer] = useState("");
   const [copied, setCopied] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [promptCopied, setPromptCopied] = useState(false);
+
+  const [newExpenseLabel, setNewExpenseLabel] = useState("");
+  const [newExpenseAmount, setNewExpenseAmount] = useState("");
+  const [newExpensePayer, setNewExpensePayer] = useState("");
+  const [addingExpense, setAddingExpense] = useState(false);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editingExpenseLabel, setEditingExpenseLabel] = useState("");
+  const [editingExpenseAmount, setEditingExpenseAmount] = useState("");
+  const [editingExpensePayer, setEditingExpensePayer] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/schedules/${scheduleId}`, {
@@ -108,18 +116,10 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     }
   }
 
-  function startEdit(
-    id: string,
-    text: string,
-    groupLabel: string | null,
-    amount: number | null,
-    payerNickname: string | null
-  ) {
+  function startEdit(id: string, text: string, groupLabel: string | null) {
     setEditingId(id);
     setEditingText(text);
     setEditingGroup(groupLabel ?? "");
-    setEditingAmount(amount != null ? String(amount) : "");
-    setEditingPayer(payerNickname ?? "");
   }
 
   async function saveEdit() {
@@ -130,12 +130,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     await fetch(`/api/schedules/${scheduleId}/items/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: editingText,
-        groupLabel: editingGroup,
-        amount: editingAmount,
-        payerNickname: editingPayer,
-      }),
+      body: JSON.stringify({ text: editingText, groupLabel: editingGroup }),
     });
     setEditingId(null);
     await load();
@@ -192,6 +187,81 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
     }
   }
 
+  async function addExpense(e: React.FormEvent) {
+    e.preventDefault();
+    setExpenseError(null);
+    if (!newExpenseLabel.trim() || !newExpenseAmount.trim() || !newExpensePayer.trim()) {
+      setExpenseError("내용, 금액, 낸 사람을 모두 입력해주세요.");
+      return;
+    }
+    setAddingExpense(true);
+    try {
+      const res = await fetch(`/api/schedules/${scheduleId}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: newExpenseLabel,
+          amount: newExpenseAmount,
+          payerNickname: newExpensePayer,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setExpenseError(json.error ?? "비용을 추가하지 못했습니다.");
+        return;
+      }
+      setNewExpenseLabel("");
+      setNewExpenseAmount("");
+      // Keep the payer filled in so adding several expenses paid by the
+      // same person in a row doesn't require retyping it each time.
+      await load();
+    } finally {
+      setAddingExpense(false);
+    }
+  }
+
+  function startEditExpense(
+    id: string,
+    label: string,
+    amount: number,
+    payerNickname: string
+  ) {
+    setEditingExpenseId(id);
+    setEditingExpenseLabel(label);
+    setEditingExpenseAmount(String(amount));
+    setEditingExpensePayer(payerNickname);
+  }
+
+  async function saveEditExpense() {
+    if (!editingExpenseId) return;
+    if (
+      !editingExpenseLabel.trim() ||
+      !editingExpenseAmount.trim() ||
+      !editingExpensePayer.trim()
+    ) {
+      return;
+    }
+    await fetch(`/api/schedules/${scheduleId}/expenses/${editingExpenseId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        label: editingExpenseLabel,
+        amount: editingExpenseAmount,
+        payerNickname: editingExpensePayer,
+      }),
+    });
+    setEditingExpenseId(null);
+    await load();
+  }
+
+  async function deleteExpense(id: string) {
+    if (!confirm("이 비용을 삭제할까요?")) return;
+    await fetch(`/api/schedules/${scheduleId}/expenses/${id}`, {
+      method: "DELETE",
+    });
+    await load();
+  }
+
   const shareUrl =
     typeof window !== "undefined" && data
       ? `${window.location.origin}/s/${data.shareToken}`
@@ -237,9 +307,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
 
   const nicknameOptions = Array.from(
     new Set(
-      (data?.items ?? []).flatMap((item) =>
-        item.checkedBy.map((c) => c.nickname)
-      )
+      (data?.items ?? []).flatMap((item) => item.checkedBy.map((c) => c.nickname))
     )
   );
 
@@ -384,41 +452,6 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                         ))}
                       </div>
                     )}
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        max={LIMITS.maxAmount}
-                        value={editingAmount}
-                        onChange={(e) => setEditingAmount(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                        placeholder="금액(원) — 비워두면 비용 없음"
-                        className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      />
-                      <input
-                        value={editingPayer}
-                        onChange={(e) => setEditingPayer(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                        maxLength={LIMITS.nickname}
-                        list="nickname-options"
-                        placeholder="낸 사람"
-                        className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      />
-                    </div>
-                    {nicknameOptions.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {nicknameOptions.map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onClick={() => setEditingPayer(name)}
-                            className="text-xs rounded-full border border-slate-300 px-2.5 py-1 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                          >
-                            {name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2">
@@ -443,15 +476,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                         ↓
                       </button>
                       <button
-                        onClick={() =>
-                          startEdit(
-                            item.id,
-                            item.text,
-                            item.groupLabel,
-                            item.amount,
-                            item.payerNickname
-                          )
-                        }
+                        onClick={() => startEdit(item.id, item.text, item.groupLabel)}
                         className="px-2 h-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                       >
                         수정
@@ -464,13 +489,6 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
                       </button>
                     </div>
                   </div>
-                )}
-
-                {editingId !== item.id && item.amount != null && (
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    💰 {item.amount.toLocaleString("ko-KR")}원
-                    {item.payerNickname && ` · ${item.payerNickname} 냄`}
-                  </p>
                 )}
 
                 <div className="mt-2.5 flex flex-wrap gap-1">
@@ -504,8 +522,6 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
             <option key={name} value={name} />
           ))}
         </datalist>
-
-        <Settlement items={data.items} showEmptyHint />
 
         <form onSubmit={addItem} className="flex flex-wrap gap-2 mb-2">
           <input
@@ -553,7 +569,7 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
         {showImport ? (
           <form
             onSubmit={importMarkdown}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3"
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3 mb-8"
           >
             <div className="flex items-start justify-between gap-2">
               <label className="block text-xs text-slate-500 leading-relaxed">
@@ -600,11 +616,177 @@ export default function ManageView({ scheduleId }: { scheduleId: string }) {
           <button
             type="button"
             onClick={() => setShowImport(true)}
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-8 inline-block"
           >
             + 마크다운으로 여러 항목 가져오기
           </button>
         )}
+
+        <h2 className="text-sm font-semibold text-slate-600 mb-3">
+          비용 <span className="text-slate-400">({data.expenses.length})</span>
+        </h2>
+        <ul className="space-y-2 mb-4">
+          {data.expenses.map((expense) => (
+            <li
+              key={expense.id}
+              className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm"
+            >
+              {editingExpenseId === expense.id ? (
+                <div className="space-y-2">
+                  <input
+                    autoFocus
+                    value={editingExpenseLabel}
+                    onChange={(e) => setEditingExpenseLabel(e.target.value)}
+                    maxLength={LIMITS.expenseLabel}
+                    placeholder="비용 내용"
+                    className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={LIMITS.maxAmount}
+                      value={editingExpenseAmount}
+                      onChange={(e) => setEditingExpenseAmount(e.target.value)}
+                      placeholder="금액(원)"
+                      className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    />
+                    <input
+                      value={editingExpensePayer}
+                      onChange={(e) => setEditingExpensePayer(e.target.value)}
+                      maxLength={LIMITS.nickname}
+                      list="nickname-options"
+                      placeholder="낸 사람"
+                      className="w-28 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    />
+                  </div>
+                  {nicknameOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {nicknameOptions.map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => setEditingExpensePayer(name)}
+                          className="text-xs rounded-full border border-slate-300 px-2.5 py-1 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveEditExpense}
+                      className="rounded-lg bg-indigo-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingExpenseId(null)}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 transition-colors"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <span className="text-[15px] text-slate-900">
+                        {expense.label}
+                      </span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        💰 {expense.amount.toLocaleString("ko-KR")}원 ·{" "}
+                        {expense.payerNickname} 냄
+                      </p>
+                    </div>
+                    <div className="flex gap-0.5 text-sm shrink-0">
+                      <button
+                        onClick={() =>
+                          startEditExpense(
+                            expense.id,
+                            expense.label,
+                            expense.amount,
+                            expense.payerNickname
+                          )
+                        }
+                        className="px-2 h-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => deleteExpense(expense.id)}
+                        className="px-2 h-8 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-1">
+                    {expense.participants.length === 0 ? (
+                      <span className="text-xs text-slate-400">
+                        아직 나눠 낼 사람을 정하지 않았습니다.
+                      </span>
+                    ) : (
+                      expense.participants.map((p) => (
+                        <span
+                          key={p.nickname}
+                          className="text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1"
+                        >
+                          ✓ {p.nickname}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <form onSubmit={addExpense} className="flex flex-wrap gap-2 mb-2">
+          <input
+            value={newExpenseLabel}
+            onChange={(e) => setNewExpenseLabel(e.target.value)}
+            maxLength={LIMITS.expenseLabel}
+            placeholder="비용 내용 (예: 숙소비)"
+            className="flex-1 basis-full sm:basis-auto min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <input
+            type="number"
+            min={1}
+            max={LIMITS.maxAmount}
+            value={newExpenseAmount}
+            onChange={(e) => setNewExpenseAmount(e.target.value)}
+            placeholder="금액(원)"
+            className="flex-1 sm:flex-none sm:w-28 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <input
+            value={newExpensePayer}
+            onChange={(e) => setNewExpensePayer(e.target.value)}
+            maxLength={LIMITS.nickname}
+            list="nickname-options"
+            placeholder="낸 사람"
+            className="flex-1 sm:flex-none sm:w-28 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <button
+            type="submit"
+            disabled={addingExpense}
+            className="shrink-0 whitespace-nowrap rounded-lg bg-indigo-600 text-white px-4 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          >
+            추가
+          </button>
+        </form>
+        {expenseError && (
+          <p className="text-sm text-red-600 mb-2">{expenseError}</p>
+        )}
+        <p className="text-xs text-slate-400 mb-6">
+          비용을 추가하면 참여자가 공유 링크에서 체크해서 나눠 낼 사람을
+          정할 수 있고, 아래 정산에 자동으로 반영됩니다.
+        </p>
+
+        <Settlement expenses={data.expenses} showEmptyHint />
 
         <div className="mt-10 pt-6 border-t border-slate-200">
           <button

@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/adminAuth";
-import {
-  LIMITS,
-  cleanOptionalAmount,
-  cleanOptionalText,
-  cleanText,
-} from "@/lib/validation";
+import { LIMITS, cleanOptionalText, cleanText } from "@/lib/validation";
 
 export async function PATCH(
   req: NextRequest,
@@ -29,12 +24,10 @@ export async function PATCH(
   }
 
   const groupLabel = cleanOptionalText(body?.groupLabel, LIMITS.groupLabel);
-  const amount = cleanOptionalAmount(body?.amount);
-  const payerNickname = cleanOptionalText(body?.payerNickname, LIMITS.nickname);
 
   const result = await prisma.checklistItem.updateMany({
     where: { id: itemId, scheduleId },
-    data: { text, groupLabel, amount, payerNickname },
+    data: { text, groupLabel },
   });
 
   if (result.count === 0) {

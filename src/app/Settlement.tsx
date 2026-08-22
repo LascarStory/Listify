@@ -1,22 +1,22 @@
 "use client";
 
 import { computeSettlement } from "@/lib/settlement";
-import type { ScheduleItem } from "@/lib/types";
+import type { Expense } from "@/lib/types";
 
 function won(amount: number) {
   return `${Math.abs(amount).toLocaleString("ko-KR")}원`;
 }
 
 export default function Settlement({
-  items,
+  expenses,
   highlightNickname,
   showEmptyHint,
 }: {
-  items: ScheduleItem[];
+  expenses: Expense[];
   highlightNickname?: string | null;
   showEmptyHint?: boolean;
 }) {
-  const { balances, transfers } = computeSettlement(items);
+  const { balances, transfers } = computeSettlement(expenses);
   const people = Object.entries(balances).sort(([, a], [, b]) => b - a);
 
   if (people.length === 0) {
@@ -25,8 +25,8 @@ export default function Settlement({
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm mb-6">
         <h2 className="text-sm font-semibold text-slate-600 mb-1">정산</h2>
         <p className="text-xs text-slate-400">
-          항목에 금액과 낸 사람을 입력하면, 그 항목을 체크한 사람들끼리
-          나눠서 정산 결과가 여기 표시됩니다.
+          비용을 추가하면, 참여자들이 체크해서 나눠 낼 사람을 정하고, 그
+          결과가 여기 표시됩니다.
         </p>
       </div>
     );

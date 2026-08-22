@@ -10,7 +10,10 @@ export async function GET(
 
   const schedule = await prisma.schedule.findUnique({
     where: { shareToken },
-    include: { items: { include: { checks: true } } },
+    include: {
+      items: { include: { checks: true } },
+      expenses: { include: { participants: true } },
+    },
   });
 
   if (!schedule) {

@@ -18,19 +18,18 @@ model Schedule {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  items ChecklistItem[]
+  items    ChecklistItem[]
+  expenses Expense[]
 }
 
 model ChecklistItem {
   id         String   @id @default(cuid())
   scheduleId String
   schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  text           String
-  groupLabel     String?
-  amount         Int?
-  payerNickname  String?
-  order          Int      @default(0)
-  createdAt      DateTime @default(now())
+  text       String
+  groupLabel String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
 
   checks CheckMark[]
 }
@@ -43,4 +42,27 @@ model CheckMark {
   checkedAt DateTime     @default(now())
 
   @@unique([itemId, nickname])
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  scheduleId    String
+  schedule      Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  label         String
+  amount        Int
+  payerNickname String
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  participants ExpenseParticipant[]
+}
+
+model ExpenseParticipant {
+  id        String   @id @default(cuid())
+  expenseId String
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  nickname  String
+  joinedAt  DateTime @default(now())
+
+  @@unique([expenseId, nickname])
 }
