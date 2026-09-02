@@ -16,6 +16,11 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
   const [nicknameInput, setNicknameInput] = useState("");
   const [data, setData] = useState<ScheduleData | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [newExpenseLabel, setNewExpenseLabel] = useState("");
+  const [newExpenseAmount, setNewExpenseAmount] = useState("");
+  const [newExpensePayer, setNewExpensePayer] = useState("");
+  const [addingExpense, setAddingExpense] = useState(false);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(nicknameKey(shareToken));
@@ -23,6 +28,15 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored) setNickname(stored);
   }, [shareToken]);
+
+  useEffect(() => {
+    // Default the "낸 사람" field to the viewer's own nickname once known,
+    // without overwriting it if they've already typed someone else's name.
+    if (nickname) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNewExpensePayer((prev) => prev || nickname);
+    }
+  }, [nickname]);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/share/${shareToken}`, { cache: "no-store" });
@@ -108,6 +122,39 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
     }).catch(() => {
       // Ignored — the next poll resyncs from the server either way.
     });
+  }
+
+  async function addExpense(e: React.FormEvent) {
+    e.preventDefault();
+    setExpenseError(null);
+    if (!newExpenseLabel.trim() || !newExpenseAmount.trim() || !newExpensePayer.trim()) {
+      setExpenseError("내용, 금액, 낸 사람을 모두 입력해주세요.");
+      return;
+    }
+    setAddingExpense(true);
+    try {
+      const res = await fetch(`/api/share/${shareToken}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: newExpenseLabel,
+          amount: newExpenseAmount,
+          payerNickname: newExpensePayer,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setExpenseError(json.error ?? "비용을 추가하지 못했습니다.");
+        return;
+      }
+      setNewExpenseLabel("");
+      setNewExpenseAmount("");
+      // Keep the payer filled in (defaults to the viewer's own nickname) so
+      // adding several expenses in a row doesn't require retyping it.
+      await load();
+    } finally {
+      setAddingExpense(false);
+    }
   }
 
   if (notFound) {
@@ -241,13 +288,16 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
           </ul>
         )}
 
-        {data.expenses.length > 0 && (
-          <>
-            <h2 className="text-sm font-semibold text-slate-600 mt-8 mb-3">
-              비용 — 나눠 낼 사람 체크
-            </h2>
-            <ul className="space-y-2 mb-6">
-              {data.expenses.map((expense) => {
+        <h2 className="text-sm font-semibold text-slate-600 mt-8 mb-3">
+          비용 — 나눠 낼 사람 체크
+        </h2>
+        {data.expenses.length === 0 ? (
+          <p className="text-slate-400 text-sm mb-4">
+            아직 등록된 비용이 없습니다.
+          </p>
+        ) : (
+          <ul className="space-y-2 mb-4">
+            {data.expenses.map((expense) => {
                 const joined = expense.participants.some(
                   (p) => p.nickname === nickname
                 );
@@ -294,8 +344,43 @@ export default function ShareView({ shareToken }: { shareToken: string }) {
                   </li>
                 );
               })}
-            </ul>
-          </>
+          </ul>
+        )}
+
+        <form onSubmit={addExpense} className="flex flex-wrap gap-2 mb-2">
+          <input
+            value={newExpenseLabel}
+            onChange={(e) => setNewExpenseLabel(e.target.value)}
+            maxLength={LIMITS.expenseLabel}
+            placeholder="비용 내용 (예: 숙소비)"
+            className="flex-1 basis-full sm:basis-auto min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <input
+            type="number"
+            min={1}
+            max={LIMITS.maxAmount}
+            value={newExpenseAmount}
+            onChange={(e) => setNewExpenseAmount(e.target.value)}
+            placeholder="금액(원)"
+            className="flex-1 sm:flex-none sm:w-28 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <input
+            value={newExpensePayer}
+            onChange={(e) => setNewExpensePayer(e.target.value)}
+            maxLength={LIMITS.nickname}
+            placeholder="낸 사람"
+            className="flex-1 sm:flex-none sm:w-28 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-shadow"
+          />
+          <button
+            type="submit"
+            disabled={addingExpense}
+            className="shrink-0 whitespace-nowrap rounded-lg bg-indigo-600 text-white px-4 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          >
+            등록
+          </button>
+        </form>
+        {expenseError && (
+          <p className="text-sm text-red-600 mb-6">{expenseError}</p>
         )}
 
         <div className="mt-6">
